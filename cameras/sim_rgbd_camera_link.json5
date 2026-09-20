@@ -8,7 +8,10 @@
 // cross between the pairing and the contract surface unchanged. stream_info
 // merges both contract stream-info responses into one message; the single
 // frames_per_second covers both streams, since color and depth are captured
-// as pairs. A color-only source uses sim_rgb_camera_link.
+// as pairs. geometry says where the camera's pixels point, what a depth
+// sample measures and how the depth stream sits against the colour one,
+// which only the simulation knows, in the fields of the camera_geometry
+// contract. A color-only source uses sim_rgb_camera_link.
 {
   peppy_schema: "pairing/v1",
   manifest: {
@@ -79,6 +82,54 @@
         depth_height: "u32",
         depth_encoding: "string",
         depth_unit: "f32",   // meters per LSB, e.g. 0.001 = 1mm
+      },
+    },
+    {
+      emitted_by: "camera",
+      name: "geometry",
+      // Low-rate description of where the camera's pixels point, what its
+      // depth samples measure and how depth sits against colour; latest
+      // value describes both current streams. It merges the
+      // camera_geometry contract's get_color_intrinsics,
+      // get_depth_intrinsics and get_depth_to_color_extrinsics responses
+      // field for field, the depth intrinsics prefixed, under that
+      // contract's conventions.
+      qos_profile: "standard",
+      message_format: {
+        // Pinhole model of the colour stream at its published size: focal
+        // lengths and principal point in pixels.
+        width: "u32",
+        height: "u32",
+        fx: "f64",
+        fy: "f64",
+        cx: "f64",
+        cy: "f64",
+        distortion_model: "string",   // "none" for a rendered image
+        distortion: { $type: "array", $items: "f64" },
+        // The same for the depth stream at its own size.
+        depth_width: "u32",
+        depth_height: "u32",
+        depth_fx: "f64",
+        depth_fy: "f64",
+        depth_cx: "f64",
+        depth_cy: "f64",
+        depth_distortion_model: "string",
+        depth_distortion: { $type: "array", $items: "f64" },
+        // "z": a sample is the distance to the plane through the point,
+        // square to the optical axis, which is what a renderer's depth
+        // buffer gives.
+        depth_model: "string",
+        // The depths the stream reports, metres; a sample outside them is 0.
+        min_depth_m: "f64",
+        max_depth_m: "f64",
+        // The alignment the frames carry. A rendered depth comes from the
+        // colour camera's own viewpoint, so this is "depth_to_color" and the
+        // pose below is the identity.
+        align_mode: "string",
+        // The depth optical frame in the colour optical frame: x, y, z (m)
+        // and a unit quaternion [x, y, z, w].
+        depth_to_color_position: { $type: "array", $items: "f64", $length: 3 },
+        depth_to_color_orientation: { $type: "array", $items: "f64", $length: 4 },
       },
     },
   ],
