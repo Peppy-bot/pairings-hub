@@ -3,8 +3,10 @@
 // description of the stream, both scoped to the pair. Message formats match
 // the rgb_camera contract topic and video_stream_info response field for
 // field, so a frame or descriptor can cross between the pairing and the
-// contract surface unchanged. Depth is not part of this conversation; a
-// color + depth source uses sim_rgbd_camera_link.
+// contract surface unchanged. geometry says where the camera's pixels
+// point, which only the simulation knows, in the fields of the
+// camera_geometry contract. Depth is not part of this
+// conversation; a color + depth source uses sim_rgbd_camera_link.
 {
   peppy_schema: "pairing/v1",
   manifest: {
@@ -46,6 +48,27 @@
         height: "u32",
         frames_per_second: "u8",
         encoding: "string",
+      },
+    },
+    {
+      emitted_by: "camera",
+      name: "geometry",
+      // Low-rate description of where the camera's pixels point; latest
+      // value describes the current stream. Fields match the
+      // camera_geometry contract's get_color_intrinsics response field for
+      // field, under that contract's conventions.
+      qos_profile: "standard",
+      message_format: {
+        // Pinhole model of the colour stream at its published size: focal
+        // lengths and principal point in pixels.
+        width: "u32",
+        height: "u32",
+        fx: "f64",
+        fy: "f64",
+        cx: "f64",
+        cy: "f64",
+        distortion_model: "string",   // "none" for a rendered image
+        distortion: { $type: "array", $items: "f64" },
       },
     },
   ],
