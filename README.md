@@ -14,13 +14,19 @@ Create a new `.json5` file under the relevant category:
 ```json5
 {
   peppy_schema: "pairing/v1",
-  manifest: { name: "<pairing_name>", tag: "<tag>" }, // tag is a pairing identifier like "v1", not semver (dots forbidden)
+  manifest: {
+    name: "<pairing_name>",
+    tag: "<tag>", // tag is a pairing identifier like "v1", not semver (dots forbidden)
+    description: ["<what the pairing is for and what each role does>"],
+  },
   roles: ["<role_a>", "<role_b>"],       // exactly two
-  topics: [ /* each entry's `emitted_by` names one of the two roles */ ],
+  topics: [ /* each entry's `emitted_by` names one of the two roles, and its `description` says what it carries */ ],
 }
 ```
 
 Pairings declare topics only: no services, no actions.
+
+`description` is a list of paragraphs, and peppy refuses a pairing without it. The first paragraph is the summary that `peppy repo search` prints; `peppy repo show` prints them all, with the description of each topic. A field of a message format can have a `$description` too: `opening: { $type: "f64", $description: "0 closed, 1 fully open." }`. Notes for the maintainers of a pairing stay comments.
 
 ## Use
 

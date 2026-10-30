@@ -1,35 +1,30 @@
-// The color-stream conversation between a simulation engine's rendered camera
-// and one viewer, as a pairing: the camera streams frames plus a low-rate
-// description of the stream, both scoped to the pair. Message formats match
-// the rgb_camera contract topic and video_stream_info response field for
-// field, so a frame or descriptor can cross between the pairing and the
-// contract surface unchanged. geometry says where the camera's pixels
-// point, which only the simulation knows, in the fields of the
-// camera_geometry contract. Depth is not part of this
-// conversation; a color + depth source uses sim_rgbd_camera_link.
 {
   peppy_schema: "pairing/v1",
   manifest: {
     name: "sim_rgb_camera_link",
     tag: "v1",
+    description: [
+      "The color-stream conversation between a simulation engine's rendered camera and one viewer, as a pairing: the camera streams frames plus low-rate descriptions of the stream and of its geometry, all scoped to the pair, and the viewer reads them.",
+      "Message formats match the rgb_camera contract topic and video_stream_info response field for field, so a frame or descriptor can cross between the pairing and the contract surface unchanged. geometry says where the camera's pixels point, which only the simulation knows, in the fields of the camera_geometry contract.",
+      "Depth is not part of this conversation; a color + depth source uses sim_rgbd_camera_link.",
+    ],
   },
   roles: ["camera", "viewer"],
   topics: [
     {
       emitted_by: "camera",
       name: "video_stream",
+      description: "Each color frame that the camera renders, with its capture time and its capture counter.",
       // High-frequency stream where only the latest frame matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
       message_format: {
         header: {
           $type: "object",
-          // Capture time of this frame.
-          timestamp: "time",
-          // Capture counter, not a coordinate frame.
-          frame_id: "u32",
+          timestamp: { $type: "time", $description: "Capture time of this frame." },
+          frame_id: { $type: "u32", $description: "Capture counter, not a coordinate frame." },
         },
-        encoding: "string",   // e.g. "rgb8" | "bgr8" | "yuyv" | "mjpeg"
+        encoding: { $type: "string", $description: "The pixel encoding of the frame, e.g. \"rgb8\", \"bgr8\", \"yuyv\" or \"mjpeg\"." },
         width: "u32",
         height: "u32",
         frame: {
@@ -41,7 +36,7 @@
     {
       emitted_by: "camera",
       name: "stream_info",
-      // Low-rate stream description; latest value describes the current stream.
+      description: "Low-rate stream description: the size, frame rate and encoding of the stream. The latest value describes the current stream.",
       qos_profile: "standard",
       message_format: {
         width: "u32",
@@ -53,22 +48,17 @@
     {
       emitted_by: "camera",
       name: "geometry",
-      // Low-rate description of where the camera's pixels point; latest
-      // value describes the current stream. Fields match the
-      // camera_geometry contract's get_color_intrinsics response field for
-      // field, under that contract's conventions.
+      description: "Low-rate description of where the camera's pixels point; the latest value describes the current stream. Fields match the camera_geometry contract's get_color_intrinsics response field for field, under that contract's conventions: width, height, fx, fy, cx and cy are the pinhole model of the colour stream at its published size, focal lengths and principal point in pixels.",
       qos_profile: "standard",
       message_format: {
-        // Pinhole model of the colour stream at its published size: focal
-        // lengths and principal point in pixels.
         width: "u32",
         height: "u32",
         fx: "f64",
         fy: "f64",
         cx: "f64",
         cy: "f64",
-        distortion_model: "string",   // "none" for a rendered image
-        distortion: { $type: "array", $items: "f64" },
+        distortion_model: { $type: "string", $description: "The distortion model: \"none\" for a rendered image." },
+        distortion: { $type: "array", $items: "f64", $description: "The coefficients of the distortion model; empty for \"none\"." },
       },
     },
   ],
