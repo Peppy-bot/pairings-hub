@@ -6,7 +6,7 @@
     description: [
       "The exclusive Cartesian control conversation between one leader instance and one device's end-effector, as a pairing: the leader streams the desired pose and the follower streams its measured pose back, both directions scoped to the pair.",
       "A joint vector is not a pose; it has its own joint_link pairing.",
-      "Pose conventions, identical in both directions: position is meters, [x, y, z]. orientation is a unit quaternion [x, y, z, w], scalar last. Both are in the follower's world frame; the frame, the end-effector link, and the kinematic chain are fixed properties of the follower, not carried per message.",
+      "Pose conventions, identical in both directions: position is meters, [x, y, z]. orientation is a unit quaternion [x, y, z, w], scalar last. Both are in the follower's robot frame, the robot frame of transforms; the end-effector link and the kinematic chain are fixed properties of the follower.",
     ],
   },
   roles: ["leader", "follower"],
@@ -14,7 +14,7 @@
     {
       emitted_by: "leader",
       name: "pose_setpoints",
-      description: "The end-effector pose that the leader wants, in the world frame of the follower.",
+      description: "The end-effector pose that the leader wants, in the follower's robot frame.",
       // High-frequency stream where only the latest setpoint matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
@@ -27,7 +27,7 @@
     {
       emitted_by: "follower",
       name: "pose_states",
-      description: "The end-effector pose that the follower measures, in its world frame.",
+      description: "The end-effector pose that the follower measures, in its robot frame.",
       // High-frequency stream where only the latest state matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
