@@ -1,0 +1,48 @@
+{
+  peppy_schema: "pairing/v1",
+  manifest: {
+    name: "drive_link",
+    tag: "v1",
+    description: [
+      "The exclusive control conversation between one leader instance and one mobile base, as a pairing: the leader streams the velocity it wants, and the follower streams back the velocity the base executes, where its odometry places it, and whether it follows the leader, each direction scoped to the pair.",
+      "Velocity conventions, identical in both directions: linear_velocity is x forward, y leftward and z up in m/s, with a z of 0, and yaw_rate is in rad/s, counterclockwise seen from above, both in the robot frame of base_state. base_state also defines the odometry frame, the modes, silence, rest and the limiter that this pairing names. A position is x, y, z in meters, and its z is 0 in every frame of this pairing, as base_state defines a position. Timestamps are on the clock the follower's instance reads, the simulation clock in a simulation. Every 0.5 s rule of this pairing counts from the arrival of setpoints on that clock; the follower reads no timestamp of a setpoint.",
+      "The leader streams from each setpoint that arrives until more than 0.5 s pass with no setpoint. While the leader streams and no hold keeps the base from it, the follower commands the newest setpoint through base_state's limiter; when the stream ends, the follower brings the base to rest. A leader therefore sends a setpoint more often than every 0.5 s while it wants motion, and setpoints of zero velocity to bring the base to rest sooner. A setpoint with a value that is not finite, or with a z other than 0, counts as no setpoint: the follower drops it.",
+      "Whoever has the base keeps it. Four holds keep the base from the leader, and the follower drops each setpoint that arrives during one. A mode other than standing and moving holds the base, its command 0, and so does a silence of the base's motion sensing, the follower bringing the base to rest; when the leader streams as either starts, the hold lasts on after it ends until more than 0.5 s pass with no setpoint. A robot stop, the stop of robot_stop on the follower's node, brings the base to rest and holds it until more than 0.5 s pass, from the stop on, with no setpoint. A goal of the follower's node holds the base while it runs when it moves the base, a joint that the base's own motion also commands, such as an arm joint that a walking controller drives, or a part that the robot moves only while its base rests, such as a lift, which the node's description names. Such a goal is refused while the leader streams, with the failure kind the goal's contract states, and a goal that moves a part of the last kind is also refused with `precondition_failed` while the base moves, as base_state defines it. A setpoint that arrives during a hold counts for every 0.5 s rule. A node that leads the base and follows a leader of its own on another pair of this pairing, such as a navigator that a joystick node leads, holds that leader through a robot stop: from the first drive_states of the base that reports robot_stop, it drops that leader's setpoints and reports robot_stop to it, until more than 0.5 s pass with no setpoint of that leader, counted from the first drive_states of the base that reports another follow_state.",
+    ],
+  },
+  roles: ["leader", "follower"],
+  topics: [
+    {
+      emitted_by: "leader",
+      name: "drive_setpoints",
+      description: "The velocity of the robot frame that the leader wants the base to drive at.",
+      // High-frequency stream where only the latest setpoint matters;
+      // occasional drops are acceptable.
+      qos_profile: "sensor_data",
+      message_format: {
+        timestamp: { $type: "time", $description: "Leader-side capture time of this setpoint, kept for a record of the stream." },
+        linear_velocity: { $type: "array", $items: "f64", $length: 3, $description: "Desired velocity in the robot frame: x forward, y leftward and z up (m/s); z is 0, and a differential base executes 0 along y." },
+        yaw_rate: { $type: "f64", $description: "Desired turn rate (rad/s), counterclockwise seen from above." },
+      },
+    },
+    {
+      emitted_by: "follower",
+      name: "drive_states",
+      description: "The velocity that the base executes and where its odometry places the robot frame, as base_state's base_states carries them and when it publishes them, and whether the follower follows the leader.",
+      // High-frequency stream where only the latest state matters;
+      // occasional drops are acceptable.
+      qos_profile: "sensor_data",
+      message_format: {
+        timestamp: { $type: "time", $description: "Follower-side capture time of this measurement." },
+        odometry_start_timestamp: { $type: "time", $description: "When the odometry frame was fixed: a new value means the odometry started over at zero." },
+        position: { $type: "array", $items: "f64", $length: 3, $description: "The robot frame's origin in the odometry frame: x, y, z (m); z is 0." },
+        yaw: { $type: "f64", $description: "The robot frame's heading in the odometry frame (rad, in (-pi, pi]), counterclockwise seen from above." },
+        linear_velocity: { $type: "array", $items: "f64", $length: 3, $description: "Velocity the base executes in the robot frame, as its odometry measures it: x forward, y leftward and z up (m/s); y is 0 on a differential base, and z is 0." },
+        yaw_rate: { $type: "f64", $description: "Turn rate the base executes (rad/s), counterclockwise seen from above, as its odometry measures it." },
+        mode: { $type: "string", $enum: ["off", "damped", "resting", "transition", "upright", "standing", "moving", "fallen"], $description: "What the base can do at timestamp, as base_state's base_states carries it." },
+        parts_within_footprint: { $type: "bool", $description: "Whether every limb stands within the footprint at timestamp, as base_state's base_states carries it." },
+        follow_state: { $type: "string", $enum: ["following", "base_mode", "robot_stop", "follower_goal"], $description: "Whether the follower follows the leader, the first of these that holds: base_mode while the mode or a silence holds the base; robot_stop while a robot stop holds the base; follower_goal while a goal of the follower's node holds the base; following otherwise, when the follower follows the leader or would follow its next setpoint." },
+      },
+    },
+  ],
+}
