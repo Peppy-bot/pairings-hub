@@ -5,7 +5,7 @@
     tag: "v1",
     description: [
       "The color-stream conversation between a simulation engine's rendered camera and one viewer, as a pairing: the camera streams frames plus low-rate descriptions of the stream and of its geometry, all scoped to the pair, and the viewer reads them.",
-      "Message formats match the rgb_camera contract topic and video_stream_info response field for field, so a frame or descriptor can cross between the pairing and the contract surface unchanged. geometry says where the camera's pixels point, which only the simulation knows, in the fields of the camera_geometry contract.",
+      "Message formats match the rgb_camera contract topic and video_stream_info response field for field, so a picture or descriptor can cross between the pairing and the contract surface unchanged. Each picture names in its header's frame the camera's frame: the frame that sensor_mounts' describe_sensors gives for the name the camera runs under, as rgb_camera's video_stream names it. geometry says where the camera's pixels point, which only the simulation knows, in the fields of the camera_geometry contract.",
       "Depth is not part of this conversation; a color + depth source uses sim_rgbd_camera_link.",
     ],
   },
@@ -14,20 +14,22 @@
     {
       emitted_by: "camera",
       name: "video_stream",
-      description: "Each color frame that the camera renders, with its capture time and its capture counter.",
+      description: "Each color picture that the camera renders, with the camera's frame, its capture time and its capture counter.",
       // High-frequency stream where only the latest frame matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
       message_format: {
         header: {
           $type: "object",
-          timestamp: { $type: "time", $description: "Capture time of this frame." },
-          frame_id: { $type: "u32", $description: "Capture counter, not a coordinate frame." },
+          $description: "The camera's frame, the capture time and the capture counter of the picture.",
+          frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a twist beside a child_frame is in child_frame, and a sensor's values are in frame through the sensor's own geometry." },
+          timestamp: { $type: "time", $description: "The time of the record on the clock of transforms; 0 names the latest time in a command and every time in a report." },
+          capture_index: { $type: "u32", $description: "The capture counter of the picture." },
         },
-        encoding: { $type: "string", $description: "The pixel encoding of the frame, e.g. \"rgb8\", \"bgr8\", \"yuyv\" or \"mjpeg\"." },
+        encoding: { $type: "string", $description: "The pixel encoding of data, e.g. \"rgb8\", \"bgr8\", \"yuyv\" or \"mjpeg\"." },
         width: "u32",
         height: "u32",
-        frame: {
+        data: {
           $type: "array",
           $items: "u8",
         },

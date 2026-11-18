@@ -40,17 +40,19 @@
     {
       emitted_by: "planner",
       name: "subgoal",
-      description: "A subgoal for the executor: the position to go to and how far ahead the planner planned it. Each subgoal has its own subgoal_id; 0 is not a subgoal_id, because the executor reports 0 when no subgoal is authoritative.",
+      description: "A subgoal for the executor: the position to go to, in its frame at its timestamp, and how far ahead the planner planned it. Each subgoal has its own subgoal_id; 0 is not a subgoal_id, because the executor reports 0 when no subgoal is authoritative.",
       // Low rate and individually meaningful: dropping one costs the executor
       // a whole planning cycle, so this direction is reliable.
       qos_profile: "reliable",
       message_format: {
         timestamp: "time",
         subgoal_id: "u32",
-        target_position: {
-          $type: "array",
-          $items: "f64",
-          $length: 3
+        target: {
+          $type: "object",
+          $description: "The position to go to, in frame at timestamp, as transforms names frames; the executor places it by its tree at that time.",
+          frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a twist beside a child_frame is in child_frame, and a sensor's values are in frame through the sensor's own geometry." },
+          timestamp: { $type: "time", $description: "The time of the record on the clock of transforms; 0 names the latest time in a command and every time in a report." },
+          position: { $type: "array", $items: "f64", $length: 3, $description: "x, y, z (m)." },
         },
         horizon_s: {
           $type: "f64",

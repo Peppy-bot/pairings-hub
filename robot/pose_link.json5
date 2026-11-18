@@ -6,7 +6,7 @@
     description: [
       "The exclusive Cartesian control conversation between one leader instance and one device's end-effector, as a pairing: the leader streams the desired pose and the follower streams its measured pose back, both directions scoped to the pair.",
       "A joint vector is not a pose; it has its own joint_link pairing.",
-      "Pose conventions, identical in both directions: position is meters, [x, y, z]. orientation is a unit quaternion [x, y, z, w], scalar last. Both are in the follower's robot frame, the robot frame of transforms; the end-effector link and the kinematic chain are fixed properties of the follower.",
+      "Pose conventions, identical in both directions: each message is a pose of the follower's end-effector with its frame and its timestamp, position in meters, [x, y, z], and orientation a unit quaternion [x, y, z, w], scalar last. pose_states gives the follower's robot frame, the robot frame of transforms. Timestamps are on the clock of transforms, which the follower's instance reads, the simulation clock in a simulation. The follower places each setpoint by its tree at its timestamp, or at the latest time for a timestamp of 0, as transforms defines a lookup: a setpoint in the robot frame names where the robot frame stood at its timestamp, or where it stands when the follower takes the setpoint for the timestamp 0. A leader that means a pose relative to the robot frame as it stands gives the timestamp 0, and so does a leader whose clock is not the clock of transforms. A setpoint that the follower cannot place, and one whose orientation's squared norm lies 0.01 or more from 1, the tolerance of tf2's buffer that transforms names, count as no setpoint: the follower drops them, and normalizes each orientation it takes. The end-effector link and the kinematic chain are fixed properties of the follower.",
     ],
   },
   roles: ["leader", "follower"],
@@ -14,27 +14,29 @@
     {
       emitted_by: "leader",
       name: "pose_setpoints",
-      description: "The end-effector pose that the leader wants, in the follower's robot frame.",
+      description: "The end-effector pose that the leader wants, given in frame at timestamp, which the follower places as the pairing's description says.",
       // High-frequency stream where only the latest setpoint matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
       message_format: {
-        timestamp: { $type: "time", $description: "Leader-side capture time of this setpoint." },
-        position: { $type: "array", $items: "f64", $length: 3, $description: "Desired end-effector position." },
-        orientation: { $type: "array", $items: "f64", $length: 4, $description: "Desired end-effector orientation." },
+        frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a twist beside a child_frame is in child_frame, and a sensor's values are in frame through the sensor's own geometry." },
+        timestamp: { $type: "time", $description: "The time of the record on the clock of transforms; 0 names the latest time in a command and every time in a report." },
+        position: { $type: "array", $items: "f64", $length: 3, $description: "x, y, z (m)." },
+        orientation: { $type: "array", $items: "f64", $length: 4, $description: "A unit quaternion [x, y, z, w]." },
       },
     },
     {
       emitted_by: "follower",
       name: "pose_states",
-      description: "The end-effector pose that the follower measures, in its robot frame.",
+      description: "The end-effector pose that the follower measures, in frame, its robot frame, at timestamp, the time of the measurement.",
       // High-frequency stream where only the latest state matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
       message_format: {
-        timestamp: { $type: "time", $description: "Follower-side capture time of this measurement." },
-        position: { $type: "array", $items: "f64", $length: 3, $description: "Measured end-effector position." },
-        orientation: { $type: "array", $items: "f64", $length: 4, $description: "Measured end-effector orientation." },
+        frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a twist beside a child_frame is in child_frame, and a sensor's values are in frame through the sensor's own geometry." },
+        timestamp: { $type: "time", $description: "The time of the record on the clock of transforms; 0 names the latest time in a command and every time in a report." },
+        position: { $type: "array", $items: "f64", $length: 3, $description: "x, y, z (m)." },
+        orientation: { $type: "array", $items: "f64", $length: 4, $description: "A unit quaternion [x, y, z, w]." },
       },
     },
   ],
