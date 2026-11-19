@@ -40,7 +40,7 @@
     {
       emitted_by: "planner",
       name: "subgoal",
-      description: "A subgoal for the executor: the position to go to, and how far ahead the planner planned it. The executor places target by its tree at target's own timestamp, or by the latest transforms when target gives none, as transforms defines a lookup. A subgoal whose target the executor cannot place counts as no subgoal: the executor drops it, and active_subgoal_id of its situation goes on naming the subgoal it servos on. Each subgoal has its own subgoal_id; 0 is not a subgoal_id, because the executor reports 0 when no subgoal is authoritative.",
+      description: "A subgoal for the executor: the position to go to, and how far ahead the planner planned it. A target with no frame lies in the executor's robot frame. The executor places target by its tree at target's own timestamp, or by the latest transforms when target gives none, as transforms defines a lookup. A subgoal whose target the executor cannot place counts as no subgoal: the executor drops it, and active_subgoal_id of its situation goes on naming the subgoal it servos on. Each subgoal has its own subgoal_id; 0 is not a subgoal_id, because the executor reports 0 when no subgoal is authoritative.",
       // Low rate and individually meaningful: dropping one costs the executor
       // a whole planning cycle, so this direction is reliable.
       qos_profile: "reliable",
@@ -50,7 +50,7 @@
         target: {
           $type: "object",
           $description: "The position to go to, in frame at timestamp, which the executor places as the topic's description says.",
-          frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames." },
+          frame: { $type: "string", $optional: true, $description: "The frame of the record's values, as transforms names frames; absent, the robot frame." },
           timestamp: { $type: "time", $optional: true, $description: "The time on the clock of transforms at which the values hold. A command leaves it out for the latest time; a report leaves it out for values that hold at every time." },
           position: { $type: "array", $items: "f64", $length: 3, $description: "x, y, z (m)." },
         },
