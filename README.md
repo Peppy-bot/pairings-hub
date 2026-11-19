@@ -28,6 +28,10 @@ Pairings declare topics only: no services, no actions.
 
 `description` is a list of paragraphs, and peppy refuses a pairing without it. The first paragraph is the summary that `peppy repo search` prints; `peppy repo show` prints them all, with the description of each topic. A field of a message format can have a `$description` too: `opening: { $type: "f64", $description: "0 closed, 1 fully open." }`. Notes for the maintainers of a pairing stay comments.
 
+## Gripper openings
+
+`robot/gripper_link.json5` gives the opening of a gripper as a fraction of the full travel of its jaws: 0 is closed and 1 is fully open, for parallel jaws and for pinch fingers alike. A client can name the two ends with words: the robot control demo of mcp-hub (`robot/robot_control_demo.py`) takes `--opening closed` for 0 and `--opening open` for 1.
+
 ## Use
 
 This repo is consumed by `peppy repo refresh` alongside node, contract, and launcher repositories.
