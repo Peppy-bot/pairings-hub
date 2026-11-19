@@ -30,7 +30,7 @@ Pairings declare topics only: no services, no actions.
 
 ## Gripper openings
 
-`robot/gripper_link.json5` gives the opening of a gripper as a fraction of the full travel of its jaws: 0 is closed and 1 is fully open, for parallel jaws and for pinch fingers alike. A client can name the two ends with words: the robot control demo of mcp-hub (`robot/robot_control_demo.py`) takes `--opening closed` for 0 and `--opening open` for 1.
+The description of `robot/gripper_link.json5` gives the unit of a gripper opening, for every mechanism.
 
 ## Use
 
