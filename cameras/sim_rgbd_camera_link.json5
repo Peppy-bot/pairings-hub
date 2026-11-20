@@ -5,7 +5,7 @@
     tag: "v1",
     description: [
       "The color + depth conversation between a simulation engine's rendered camera and one viewer, as a pairing: the camera streams synchronized color and depth frames plus low-rate descriptions of both streams and of their geometry, all scoped to the pair, and the viewer reads them.",
-      "Color and depth share a frame_id (a capture-pair counter, not a coordinate frame) so consumers can correlate paired frames without timestamp matching. Frame messages match the rgbd_camera contract topics field for field, so frames cross between the pairing and the contract surface unchanged. stream_info merges both contract stream-info responses into one message; the single frames_per_second covers both streams, since color and depth are captured as pairs.",
+      "Color and depth share a capture_index, a capture-pair counter, so consumers pair a color picture with its depth picture without timestamp matching. Each picture names in its header's frame the camera's frame: the frame that sensor_mounts' describe_sensors gives for the name the camera runs under, as rgbd_camera's streams name it. Picture messages match the rgbd_camera contract topics field for field, so pictures cross between the pairing and the contract surface unchanged. stream_info merges both contract stream-info responses into one message; the single frames_per_second covers both streams, since color and depth are captured as pairs.",
       "geometry says where the camera's pixels point, what a depth sample measures and how the depth stream sits against the colour one, which only the simulation knows, in the fields of the camera_geometry contract.",
       "A color-only source uses sim_rgb_camera_link.",
     ],
@@ -15,21 +15,23 @@
     {
       emitted_by: "camera",
       name: "video_stream",
-      description: "Each color frame that the camera renders. It shares its frame_id with the depth frame of the same capture.",
+      description: "Each color picture that the camera renders. It shares its capture_index with the depth picture of the same capture.",
       // High-frequency stream where only the latest frame matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
       message_format: {
         header: {
           $type: "object",
-          timestamp: { $type: "time", $description: "Capture time of this frame." },
-          frame_id: { $type: "u32", $description: "Capture-pair counter shared with the matching depth frame." },
-          align_mode: { $type: "string", $description: "The alignment of the frame, e.g. \"none\", \"depth_to_color\" or \"color_to_depth\"." },
+          $description: "The camera's frame, the capture time and the capture counter of the picture.",
+          frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a sensor's values are in frame through the sensor's own geometry." },
+          timestamp: { $type: "time", $description: "The time on the clock of transforms at which the values hold." },
+          capture_index: { $type: "u32", $description: "The capture-pair counter, shared by the color picture and the depth picture of one capture." },
+          align_mode: { $type: "string", $description: "The alignment of the picture, e.g. \"none\", \"depth_to_color\" or \"color_to_depth\"." },
         },
-        encoding: { $type: "string", $description: "The pixel encoding of the frame, e.g. \"rgb8\", \"bgr8\", \"yuyv\" or \"mjpeg\"." },
+        encoding: { $type: "string", $description: "The pixel encoding of data, e.g. \"rgb8\", \"bgr8\", \"yuyv\" or \"mjpeg\"." },
         width: "u32",
         height: "u32",
-        frame: {
+        data: {
           $type: "array",
           $items: "u8",
         },
@@ -38,21 +40,23 @@
     {
       emitted_by: "camera",
       name: "depth_stream",
-      description: "Each depth frame that the camera renders. It shares its frame_id with the color frame of the same capture.",
+      description: "Each depth picture that the camera renders. It shares its capture_index with the color picture of the same capture.",
       // High-frequency stream where only the latest frame matters;
       // occasional drops are acceptable.
       qos_profile: "sensor_data",
       message_format: {
         header: {
           $type: "object",
-          timestamp: { $type: "time", $description: "Capture time of this frame." },
-          frame_id: { $type: "u32", $description: "Capture-pair counter shared with the matching color frame." },
-          align_mode: { $type: "string", $description: "The alignment of the frame, e.g. \"none\", \"depth_to_color\" or \"color_to_depth\"." },
+          $description: "The camera's frame, the capture time and the capture counter of the picture.",
+          frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a sensor's values are in frame through the sensor's own geometry." },
+          timestamp: { $type: "time", $description: "The time on the clock of transforms at which the values hold." },
+          capture_index: { $type: "u32", $description: "The capture-pair counter, shared by the color picture and the depth picture of one capture." },
+          align_mode: { $type: "string", $description: "The alignment of the picture, e.g. \"none\", \"depth_to_color\" or \"color_to_depth\"." },
         },
-        encoding: { $type: "string", $description: "The sample encoding of the frame, e.g. \"z16\" (u16 little-endian)." },
+        encoding: { $type: "string", $description: "The sample encoding of data, e.g. \"z16\" (u16 little-endian)." },
         width: "u32",
         height: "u32",
-        frame: {
+        data: {
           $type: "array",
           $items: "u8",
         },
@@ -104,19 +108,14 @@
         max_depth_m: { $type: "f64", $description: "The largest depth the stream reports, metres; a sample farther than it is 0." },
         align_mode: {
           $type: "string",
-          $description: "The alignment the frames carry. A rendered depth comes from the colour camera's own viewpoint, so this is \"depth_to_color\" and the pose in depth_to_color_position and depth_to_color_orientation is the identity.",
+          $description: "The alignment the frames carry. A rendered depth comes from the colour camera's own viewpoint, so this is \"depth_to_color\" and the pose in depth_to_color is the identity.",
         },
-        depth_to_color_position: {
-          $type: "array",
-          $items: "f64",
-          $length: 3,
-          $description: "The position of the depth optical frame in the colour optical frame: x, y, z (m).",
-        },
-        depth_to_color_orientation: {
-          $type: "array",
-          $items: "f64",
-          $length: 4,
-          $description: "The orientation of the depth optical frame in the colour optical frame: a unit quaternion [x, y, z, w].",
+        depth_to_color: {
+          $type: "object",
+          $description: "The pose of the depth optical frame in frame, the camera's frame, the colour optical frame; it holds at every time, so the record holds no timestamp.",
+          frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a sensor's values are in frame through the sensor's own geometry." },
+          position: { $type: "array", $items: "f64", $length: 3, $description: "x, y, z (m)." },
+          orientation: { $type: "array", $items: "f64", $length: 4, $description: "A unit quaternion [x, y, z, w]." },
         },
       },
     },
