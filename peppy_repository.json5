@@ -1,6 +1,11 @@
 {
   peppy_schema: "repository/v1",
   pairings: {
+    sim_lidar_2d_link: {
+      v1: {
+        path: "lidars/sim_lidar_2d_link.json5"
+      }
+    },
     deliberation: {
       v1: {
         path: "example_robot/deliberation.json5"

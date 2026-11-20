@@ -1,0 +1,39 @@
+{
+  peppy_schema: "pairing/v1",
+  manifest: {
+    name: "sim_lidar_2d_link",
+    tag: "v1",
+    description: [
+      "The scan conversation between a simulation engine's 2-D lidar and one viewer, as a pairing: the lidar streams its scans, scoped to the pair, and the viewer reads them.",
+      "Scan messages match the lidar_2d contract's scan_stream field for field, under that contract's conventions for the sensor frame, the rays, the two range marks and the timestamps, so scans cross between the pairing and the contract surface unchanged. Each scan's header names the sensor frame: the frame that sensor_mounts' describe_sensors gives for the name the lidar runs under, as lidar_2d's scan_stream names it. Timestamps are on the simulation clock.",
+      "A simulated depth camera uses sim_rgbd_camera_link.",
+    ],
+  },
+  roles: ["lidar", "viewer"],
+  topics: [
+    {
+      emitted_by: "lidar",
+      name: "scan_stream",
+      description: "Each scan that the lidar measures, one per sweep, as lidar_2d's scan_stream carries it.",
+      // High-frequency stream where only the latest scan matters;
+      // occasional drops are acceptable.
+      qos_profile: "sensor_data",
+      message_format: {
+        header: {
+          $type: "object",
+          $description: "The scan's frame, the sensor frame, and the time of its ray 0.",
+          timestamp: { $type: "time", $description: "The time on the clock of transforms at which the values hold." },
+          frame: { $type: "string", $description: "The frame of the record's values, as transforms names frames; a sensor's values are in frame through the sensor's own geometry." },
+          capture_index: { $type: "u32", $description: "The capture counter of the scan." },
+        },
+        min_angle_rad: { $type: "f32", $description: "The angle of the first ray (rad)." },
+        angle_increment_rad: { $type: "f32", $description: "The angle between one ray and the next (rad), above 0." },
+        time_increment_s: { $type: "f32", $description: "The time from one ray to the next (s): below 0 for a lidar that sweeps clockwise, and 0 for one that measures every ray at once." },
+        min_range_m: { $type: "f32", $description: "The nearest range the lidar measures (m), 0 or above." },
+        max_range_m: { $type: "f32", $description: "The farthest range the lidar measures (m), above min_range_m and below 10000." },
+        ranges: { $type: "array", $items: "f32", $description: "The range of each ray (m), in ray order; 0 and 10000 are the two marks of lidar_2d's description." },
+        intensities: { $type: "array", $items: "f32", $description: "The intensity of each ray, in the simulation's own unit and in ray order; empty for a lidar that measures none." },
+      },
+    },
+  ],
+}
