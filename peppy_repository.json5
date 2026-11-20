@@ -6,6 +6,11 @@
         path: "example_robot/deliberation.json5"
       }
     },
+    drive_link: {
+      v1: {
+        path: "robot/drive_link.json5"
+      }
+    },
     gripper_link: {
       v1: {
         path: "robot/gripper_link.json5"
@@ -19,6 +24,11 @@
     pose_link: {
       v1: {
         path: "robot/pose_link.json5"
+      }
+    },
+    sim_lidar_2d_link: {
+      v1: {
+        path: "lidars/sim_lidar_2d_link.json5"
       }
     },
     sim_rgb_camera_link: {
