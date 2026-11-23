@@ -6,6 +6,11 @@
         path: "example_robot/deliberation.json5"
       }
     },
+    drive_link: {
+      v1: {
+        path: "robot/drive_link.json5"
+      }
+    },
     gripper_link: {
       v1: {
         path: "robot/gripper_link.json5"
