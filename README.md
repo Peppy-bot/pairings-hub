@@ -28,6 +28,10 @@ Pairings declare topics only: no services, no actions.
 
 `description` is a list of paragraphs, and peppy refuses a pairing without it. The first paragraph is the summary that `peppy repo search` prints; `peppy repo show` prints them all, with the description of each topic. A field of a message format can have a `$description` too: `opening: { $type: "f64", $description: "0 closed, 1 fully open." }`. Notes for the maintainers of a pairing stay comments.
 
+## Gripper openings
+
+The description of `robot/gripper_link.json5` gives the unit of a gripper opening, for every mechanism.
+
 ## Use
 
 This repo is consumed by `peppy repo refresh` alongside node, contract, and launcher repositories.
